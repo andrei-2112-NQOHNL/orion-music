@@ -42,6 +42,7 @@ class MainActivity : AppCompatActivity() {
     private var dragging = false
     private var lyricDialog: Dialog? = null
     private var lyricText: TextView? = null
+    private lateinit var settingsView: android.view.View
 
     private val ACC = Color.rgb(0, 184, 212)
     private val PANEL = Color.rgb(20, 27, 45)
@@ -68,7 +69,8 @@ class MainActivity : AppCompatActivity() {
     private fun showTab(i: Int) {
         tab = i
         soundView.visibility = if (i == 4) android.view.View.VISIBLE else android.view.View.GONE
-        listView.visibility = if (i == 4) android.view.View.GONE else android.view.View.VISIBLE
+        settingsView.visibility = if (i == 5) android.view.View.VISIBLE else android.view.View.GONE
+        listView.visibility = if (i >= 4) android.view.View.GONE else android.view.View.VISIBLE
         if (i == 3) {
             val names = lib.playlists.keys.toTypedArray()
             if (names.isEmpty()) { Toast.makeText(this, "No playlists yet. Long press a song and add one.", Toast.LENGTH_SHORT).show() }
@@ -182,7 +184,7 @@ class MainActivity : AppCompatActivity() {
         col.addView(box)
 
         val tabs = LinearLayout(this)
-        listOf("Search", "Queue", "Liked", "Playlists", "Sound").forEachIndexed { i, n -> tabs.addView(btn(n) { showTab(i) }, LinearLayout.LayoutParams(0, -2, 1f)) }
+        listOf("Search", "Queue", "Liked", "Playlists", "Sound", "Settings").forEachIndexed { i, n -> tabs.addView(btn(n) { showTab(i) }, LinearLayout.LayoutParams(0, -2, 1f)) }
         col.addView(tabs)
 
         listView = ListView(this)
@@ -195,7 +197,32 @@ class MainActivity : AppCompatActivity() {
         sc.addView(tv("Equalizer", 14f, ACC).apply { setPadding(0, dp(12), 0, dp(4)) })
         for (i in 0 until 10) sc.addView(slider(AudioFx.FREQS[i].let { if (it >= 1000) "${it / 1000}k" else "$it" }, -12, 12, 0) { fx.bands[i] = it.toDouble() })
         soundView.addView(sc)
-        val frame = FrameLayout(this); frame.addView(listView); frame.addView(soundView)
+        val st = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(8), dp(12), dp(8), dp(12)) }
+        st.addView(tv("Settings", 16f, ACC))
+        st.addView(tv("Version " + Updater.CURRENT, 14f).apply { setPadding(0, dp(8), 0, dp(8)) })
+        val upStatus = tv("Tap to check for updates", 13f, Color.GRAY).apply { setPadding(0, dp(8), 0, dp(8)) }
+        val dlB = btn("Download update") {}
+        dlB.visibility = android.view.View.GONE
+        val checkB = btn("Check for updates") {}
+        checkB.setOnClickListener {
+            upStatus.text = "Checking..."
+            Thread {
+                val r = runCatching { Updater.check(File(filesDir, "orionmusic")) }
+                runOnUiThread {
+                    val up = r.getOrNull()
+                    if (r.isFailure) upStatus.text = "Check failed. Are you online?"
+                    else if (up == null) upStatus.text = "You are up to date"
+                    else {
+                        upStatus.text = "Version " + up.version + " is available. " + up.notes
+                        dlB.visibility = android.view.View.VISIBLE
+                        dlB.setOnClickListener { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(up.url))) }
+                    }
+                }
+            }.start()
+        }
+        st.addView(checkB); st.addView(upStatus); st.addView(dlB)
+        settingsView = ScrollView(this).apply { visibility = android.view.View.GONE; addView(st) }
+        val frame = FrameLayout(this); frame.addView(listView); frame.addView(soundView); frame.addView(settingsView)
         col.addView(frame, LinearLayout.LayoutParams(-1, 0, 1f))
 
         nowLbl = tv("Nothing playing", 14f); col.addView(nowLbl)

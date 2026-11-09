@@ -8,11 +8,12 @@ data class UpdateInfo(val version: String, val url: String, val notes: String)
 
 /** Checks a small JSON file {"version":"0.5","url":"https://...","notes":"..."} for a newer version. */
 object Updater {
-    const val CURRENT = "0.4"
+    const val CURRENT = "0.5"
     private val client = OkHttpClient()
 
     /** The check address is stored in ~/.config/orionmusic/update_url so it can be changed without rebuilding. */
-    fun checkUrl(dir: File): String? = File(dir, "update_url").takeIf { it.exists() }?.readText()?.trim()?.takeIf { it.startsWith("https://") }
+    const val DEFAULT_URL = "https://raw.githubusercontent.com/andrei-2112-NQOHNL/orion-music/main/version.json"
+    fun checkUrl(dir: File): String? = File(dir, "update_url").takeIf { it.exists() }?.readText()?.trim()?.takeIf { it.startsWith("https://") } ?: DEFAULT_URL
 
     private fun newer(a: String, b: String): Boolean {
         val x = a.split(".").map { it.toIntOrNull() ?: 0 }
