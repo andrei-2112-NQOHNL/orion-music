@@ -38,7 +38,7 @@ private class ShimmerTitle(val txt: String) : JComponent() {
     private var t = 0f
     init {
         font = Font(Font.SANS_SERIF, Font.BOLD, 22)
-        javax.swing.Timer(50) { if (isShowing) { t += 0.02f; repaint() } }.start()
+        javax.swing.Timer(16) { if (isShowing) { t += 0.0064f; repaint() } }.start()
     }
     override fun getPreferredSize() = Dimension(240, 36)
     override fun paintComponent(g: Graphics) {
@@ -78,7 +78,7 @@ private class NowTitle : JLabel("Nothing playing") {
     private var t = 0f
     init {
         font = Font(Font.SANS_SERIF, Font.BOLD, 15); foreground = Color.WHITE; isOpaque = false
-        javax.swing.Timer(60) { if (isShowing) { t += 0.03f; repaint() } }.start()
+        javax.swing.Timer(16) { if (isShowing) { t += 0.01f; repaint() } }.start()
     }
     override fun paintComponent(g: Graphics) {
         val g2 = g.create() as Graphics2D
@@ -98,7 +98,7 @@ private class PulseRing(val inner: JComponent) : JPanel(BorderLayout()) {
         isOpaque = false
         border = BorderFactory.createEmptyBorder(4, 4, 4, 4)
         add(inner)
-        javax.swing.Timer(60) { if (isShowing) { t += 0.05f; repaint() } }.start()
+        javax.swing.Timer(16) { if (isShowing) { t += 0.0167f; repaint() } }.start()
     }
     override fun paintComponent(g: Graphics) {
         val g2 = g.create() as Graphics2D
@@ -229,7 +229,7 @@ private class GlassCard(val inner: JComponent) : JPanel(BorderLayout()) {
         isOpaque = false
         border = BorderFactory.createEmptyBorder(6, 6, 6, 6)
         add(inner)
-        javax.swing.Timer(50) { if (isShowing) { t += 0.04f; repaint() } }.start()
+        javax.swing.Timer(16) { if (isShowing) { t += 0.0125f; repaint() } }.start()
     }
     override fun paintComponent(g: Graphics) {
         val g2 = g.create() as Graphics2D
@@ -246,7 +246,7 @@ private class GlassCard(val inner: JComponent) : JPanel(BorderLayout()) {
 
 private class Vinyl : JComponent() {
     private var t = 0.0
-    init { isOpaque = false; javax.swing.Timer(40) { if (isShowing) { t += 0.08; repaint() } }.start() }
+    init { isOpaque = false; javax.swing.Timer(16) { if (isShowing) { t += 0.032; repaint() } }.start() }
     override fun getPreferredSize() = Dimension(46, 46)
     override fun paintComponent(g: Graphics) {
         val g2 = g.create() as Graphics2D
@@ -281,7 +281,7 @@ private class GlowPanel : JPanel() {
     private val sy = DoubleArray(70) { rnd.nextDouble() }
     private val sp = DoubleArray(70) { 0.02 + rnd.nextDouble() * 0.06 }
     private val lo = java.awt.image.BufferedImage(360, 236, java.awt.image.BufferedImage.TYPE_INT_RGB)
-    init { isOpaque = true; javax.swing.Timer(50) { if (isShowing) { t += 0.035; repaint() } }.start() }
+    init { isOpaque = true; javax.swing.Timer(16) { if (isShowing) { t += 0.011; repaint() } }.start() }
     override fun paintComponent(g: Graphics) {
         val q = lo.createGraphics()
         q.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF)
@@ -578,11 +578,11 @@ fun main() {
         val head = JPanel(BorderLayout(10, 4)).dark().apply {
             add(PulseRing(GalaxyLogo(44)), BorderLayout.WEST)
             add(ShimmerTitle("ORION MUSIC"), BorderLayout.CENTER)
-            add(JPanel(FlowLayout(FlowLayout.RIGHT, 6, 0)).dark().apply { add(NowBars()); add(updateB); add(status) }, BorderLayout.EAST)
+            add(JPanel(FlowLayout(FlowLayout.RIGHT, 6, 0)).dark().apply { add(updateB); add(status) }, BorderLayout.EAST)
         }
         val north = JPanel(BorderLayout(4, 6)).dark().apply { add(head, BorderLayout.NORTH); add(box, BorderLayout.SOUTH) }
         val seekRow = JPanel(BorderLayout(6, 0)).dark().apply { add(Vinyl(), BorderLayout.WEST); add(seek); add(timeLbl, BorderLayout.EAST) }
-        val south = JPanel(GridLayout(0, 1)).dark().apply { add(nowLbl); add(WaveStrip()); add(seekRow); add(bar) }
+        val south = JPanel(GridLayout(0, 1)).dark().apply { add(nowLbl); add(seekRow); add(bar) }
 
         JFrame("Orion Music").apply {
             defaultCloseOperation = JFrame.EXIT_ON_CLOSE

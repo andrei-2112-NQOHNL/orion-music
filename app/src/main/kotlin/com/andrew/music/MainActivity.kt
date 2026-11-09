@@ -163,7 +163,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
         lib = Library(File(filesDir, "orionmusic"))
-        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(28), dp(12), dp(8)); setBackgroundColor(BGC) }
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(28), dp(12), dp(8)); background = GlowBackground(); android.animation.ValueAnimator.ofFloat(0f, 1f).apply { duration = 1000; repeatCount = android.animation.ValueAnimator.INFINITE; addUpdateListener { invalidate() }; start() } }
         val head = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
         head.addView(GalaxyLogoView(this), LinearLayout.LayoutParams(dp(40), dp(40)))
         head.addView(tv("ORION MUSIC", 20f, ACC).apply { letterSpacing = 0.2f; setPadding(dp(10), 0, 0, 0) }, LinearLayout.LayoutParams(0, -2, 1f))
