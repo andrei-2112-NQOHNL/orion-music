@@ -15,9 +15,38 @@ private val DIM = Color(0x787D92)
 
 private fun <T : JComponent> T.dark(): T { background = PANEL; foreground = Color.WHITE; if (this is JPanel || this is JLabel) isOpaque = false; return this }
 
+private class OrionTabUI : javax.swing.plaf.basic.BasicTabbedPaneUI() {
+    override fun paintTabBackground(g: Graphics, tabPlacement: Int, tabIndex: Int, x: Int, y: Int, w: Int, h: Int, isSelected: Boolean) {
+        val g2 = g.create() as Graphics2D
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        if (isSelected) {
+            g2.color = Color(ACC.red, ACC.green, ACC.blue, 70)
+            g2.fillRoundRect(x + 1, y + 1, w - 2, h - 2, h, h)
+            g2.paint = GradientPaint(x.toFloat(), y.toFloat(), ACC, (x + w).toFloat(), y.toFloat(), Color(0xCBA6F7))
+            g2.fillRoundRect(x + 4, y + 3, w - 8, h - 6, h, h)
+        } else {
+            g2.color = Color(255, 255, 255, 12)
+            g2.fillRoundRect(x + 4, y + 3, w - 8, h - 6, h, h)
+        }
+        g2.dispose()
+    }
+    override fun paintTabBorder(g: Graphics, tabPlacement: Int, tabIndex: Int, x: Int, y: Int, w: Int, h: Int, isSelected: Boolean) {}
+    override fun paintContentBorder(g: Graphics, tabPlacement: Int, selectedIndex: Int) {}
+    override fun paintFocusIndicator(g: Graphics, tabPlacement: Int, rects: Array<Rectangle>, tabIndex: Int, iconRect: Rectangle, textRect: Rectangle, isSelected: Boolean) {}
+    override fun paintText(g: Graphics, tabPlacement: Int, font: Font, metrics: FontMetrics, tabIndex: Int, title: String, textRect: Rectangle, isSelected: Boolean) {
+        val g2 = g.create() as Graphics2D
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+        g2.font = font.deriveFont(Font.BOLD, 13f)
+        g2.color = if (isSelected) BG else Color.WHITE
+        g2.drawString(title, textRect.x, textRect.y + metrics.ascent)
+        g2.dispose()
+    }
+}
+
 private class FadeTabs : JTabbedPane() {
     private var a = 1f
     init {
+        setUI(OrionTabUI()); isOpaque = false
         addChangeListener {
             a = 0f
             javax.swing.Timer(16, null).apply {
