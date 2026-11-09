@@ -383,7 +383,7 @@ fun main() {
         // lyrics fullscreen window
         val lyricLbl = JLabel("", SwingConstants.CENTER).apply { foreground = Color.WHITE; verticalAlignment = SwingConstants.CENTER }
         val lyricWin = JFrame("Orion Lyrics").apply {
-            isUndecorated = true; contentPane.background = Color.BLACK
+            isUndecorated = true; contentPane = GlowPanel().apply { layout = BorderLayout() }
             contentPane.add(lyricLbl)
             addKeyListener(object : KeyAdapter() { override fun keyPressed(e: KeyEvent) { if (e.keyCode == KeyEvent.VK_ESCAPE) isVisible = false } })
             addMouseListener(object : MouseAdapter() { override fun mouseClicked(e: MouseEvent) { isVisible = false } })
