@@ -143,10 +143,12 @@ private class PulseRing(val inner: JComponent) : JPanel(BorderLayout()) {
 
 private class RowRenderer : DefaultListCellRenderer() {
     private var sel = false
+    private var hov = false
     init { isOpaque = false; border = BorderFactory.createEmptyBorder(9, 14, 9, 14); font = font.deriveFont(14f) }
     override fun getListCellRendererComponent(l: JList<*>, v: Any?, i: Int, s: Boolean, f: Boolean): Component {
         super.getListCellRendererComponent(l, v, i, s, f)
         sel = s; isOpaque = false
+        hov = (l.getClientProperty("hov") as? Int) == i
         foreground = if (s) BG else Color.WHITE
         return this
     }
@@ -157,7 +159,7 @@ private class RowRenderer : DefaultListCellRenderer() {
             g2.paint = GradientPaint(0f, 0f, ACC, width.toFloat(), 0f, Color(0xCBA6F7))
             g2.fillRoundRect(2, 1, width - 4, height - 2, 18, 18)
         } else {
-            g2.color = Color(255, 255, 255, 10)
+            g2.color = if (hov) Color(ACC.red, ACC.green, ACC.blue, 45) else Color(255, 255, 255, 10)
             g2.fillRoundRect(2, 1, width - 4, height - 2, 18, 18)
         }
         g2.dispose()
@@ -405,7 +407,15 @@ private fun fmt(sec: Int) = "%d:%02d".format(sec / 60, sec % 60)
 
 private class TrackList(val items: () -> List<Track>) : JScrollPane() {
     val model = DefaultListModel<String>()
-    val list = JList(model).dark().apply { cellRenderer = RowRenderer(); isOpaque = false }
+    val list = JList(model).dark().apply {
+        cellRenderer = RowRenderer(); isOpaque = false
+        addMouseMotionListener(object : MouseAdapter() {
+            override fun mouseMoved(e: MouseEvent) { val i = locationToIndex(e.point); if (getClientProperty("hov") != i) { putClientProperty("hov", i); repaint() } }
+        })
+        addMouseListener(object : MouseAdapter() {
+            override fun mouseExited(e: MouseEvent) { putClientProperty("hov", -1); repaint() }
+        })
+    }
     var cur = listOf<Track>()
     init { setViewportView(list); border = BorderFactory.createEmptyBorder(); refresh() }
     private var fa = 1f
