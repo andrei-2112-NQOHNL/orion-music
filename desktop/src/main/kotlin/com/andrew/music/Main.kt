@@ -307,6 +307,8 @@ private class Vinyl : JComponent() {
 
 private class GlowPanel : JPanel() {
     private var t = 0.0
+    private var mx = 400.0
+    private var my = 300.0
     private val rnd = java.util.Random(7)
     private val sx = DoubleArray(70) { rnd.nextDouble() }
     private val sy = DoubleArray(70) { rnd.nextDouble() }
@@ -339,6 +341,13 @@ private class GlowPanel : JPanel() {
         val g2 = g as Graphics2D
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
         g2.drawImage(lo, 0, 0, width, height, null)
+        val pi = MouseInfo.getPointerInfo()
+        if (pi != null) {
+            val pt = Point(pi.location); SwingUtilities.convertPointFromScreen(pt, this)
+            mx += (pt.x - mx) * 0.12; my += (pt.y - my) * 0.12
+            g2.paint = RadialGradientPaint(mx.toFloat(), my.toFloat(), 240f, floatArrayOf(0f, 1f), arrayOf(Color(ACC.red, ACC.green, ACC.blue, 60), Color(ACC.red, ACC.green, ACC.blue, 0)))
+            g2.fillRect(0, 0, width, height)
+        }
         for (i in sx.indices) {
             val x = ((sx[i] + t * sp[i] * 0.3) % 1.0) * width
             val y = ((sy[i] - t * sp[i] * 0.15 + 1.0) % 1.0) * height
