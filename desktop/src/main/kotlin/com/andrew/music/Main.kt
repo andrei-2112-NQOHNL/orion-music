@@ -282,6 +282,16 @@ private class GlowPanel : JPanel() {
     private val sp = DoubleArray(70) { 0.02 + rnd.nextDouble() * 0.06 }
     private val lo = java.awt.image.BufferedImage(360, 236, java.awt.image.BufferedImage.TYPE_INT_RGB)
     init { isOpaque = true; javax.swing.Timer(16) { if (isShowing) { t += 0.011; repaint() } }.start() }
+    private val born = System.currentTimeMillis()
+    override fun paint(g: Graphics) {
+        super.paint(g)
+        val k = ((System.currentTimeMillis() - born) / 700f).coerceIn(0f, 1f)
+        if (k < 1f) {
+            val e = 1f - k * k * (3f - 2f * k)
+            g.color = Color(BG.red, BG.green, BG.blue, (e * 255).toInt().coerceIn(0, 255))
+            g.fillRect(0, 0, width, height)
+        }
+    }
     override fun paintComponent(g: Graphics) {
         val q = lo.createGraphics()
         q.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF)
