@@ -543,7 +543,7 @@ fun main() {
         }
         val bar = JPanel(FlowLayout(FlowLayout.CENTER, 6, 4)).dark()
         bar.add(btn("Prev") { lib.previous()?.let { play(it); refreshAll() } })
-        bar.add(PillButton("Pause/Play", true) { mpv.togglePause() })
+        bar.add(PillButton("Play / Pause", true) { mpv.togglePause() }.apply { font = font.deriveFont(Font.BOLD, 16f); border = BorderFactory.createEmptyBorder(14, 38, 14, 38) })
         bar.add(btn("Next") { lib.next()?.let { play(it); refreshAll() } })
         bar.add(shuffleB); bar.add(repeatB)
         val likeBurst = Burst()
