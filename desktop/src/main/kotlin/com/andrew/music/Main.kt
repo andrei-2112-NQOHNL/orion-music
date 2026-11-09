@@ -198,24 +198,49 @@ private class GlowSlider(min: Int, max: Int, v: Int, val vert: Boolean = false) 
     }
 }
 
+private class WaveStrip : JComponent() {
+    private var t = 0.0
+    init { isOpaque = false; javax.swing.Timer(50) { if (isShowing) { t += 0.12; repaint() } }.start() }
+    override fun getPreferredSize() = Dimension(100, 34)
+    override fun paintComponent(g: Graphics) {
+        val g2 = g.create() as Graphics2D
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        val cols = arrayOf(ACC, Color(0xB4BEFE), Color(0xCBA6F7))
+        for (k in 0 until 3) {
+            val path = java.awt.geom.Path2D.Float()
+            var x = 0
+            while (x <= width) {
+                val y = height / 2.0 + Math.sin(x * 0.02 * (1 + k * 0.4) + t * (1 + k * 0.5)) * (height * (0.30 - k * 0.07))
+                if (x == 0) path.moveTo(x.toDouble(), y) else path.lineTo(x.toDouble(), y)
+                x += 6
+            }
+            val c = cols[k]
+            g2.color = Color(c.red, c.green, c.blue, 150 - k * 30)
+            g2.stroke = BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
+            g2.draw(path)
+        }
+        g2.dispose()
+    }
+}
+
 private class GlowPanel : JPanel() {
     private var t = 0.0
     private val rnd = java.util.Random(7)
     private val sx = DoubleArray(70) { rnd.nextDouble() }
     private val sy = DoubleArray(70) { rnd.nextDouble() }
     private val sp = DoubleArray(70) { 0.02 + rnd.nextDouble() * 0.06 }
-    private val lo = java.awt.image.BufferedImage(200, 130, java.awt.image.BufferedImage.TYPE_INT_RGB)
+    private val lo = java.awt.image.BufferedImage(360, 236, java.awt.image.BufferedImage.TYPE_INT_RGB)
     init { isOpaque = true; javax.swing.Timer(50) { if (isShowing) { t += 0.035; repaint() } }.start() }
     override fun paintComponent(g: Graphics) {
         val q = lo.createGraphics()
         q.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF)
         q.color = BG; q.fillRect(0, 0, lo.width, lo.height)
-        val blobs = arrayOf(Triple(0.2, 0.3, ACC), Triple(0.8, 0.6, Color(0xB4BEFE)), Triple(0.5, 0.9, Color(0xCBA6F7)), Triple(0.85, 0.1, Color(0xF5C2E7)))
+        val blobs = arrayOf(Triple(0.2, 0.3, ACC), Triple(0.8, 0.6, Color(0xB4BEFE)), Triple(0.5, 0.9, Color(0xCBA6F7)), Triple(0.85, 0.1, Color(0xF5C2E7)), Triple(0.1, 0.85, Color(0x94E2D5)), Triple(0.6, 0.35, Color(0x89DCEB)))
         for ((i, b) in blobs.withIndex()) {
             val cx = (lo.width * (b.first + 0.2 * Math.sin(t * (0.7 + i * 0.3) + i * 2))).toFloat()
             val cy = (lo.height * (b.second + 0.15 * Math.cos(t * (0.5 + i * 0.25) + i))).toFloat()
             val c = b.third
-            q.paint = RadialGradientPaint(cx, cy, lo.width * 0.6f, floatArrayOf(0f, 1f), arrayOf(Color(c.red, c.green, c.blue, 70), Color(c.red, c.green, c.blue, 0)))
+            q.paint = RadialGradientPaint(cx, cy, lo.width * 0.6f, floatArrayOf(0f, 1f), arrayOf(Color(c.red, c.green, c.blue, 85), Color(c.red, c.green, c.blue, 0)))
             q.fillRect(0, 0, lo.width, lo.height)
         }
         q.dispose()
@@ -229,6 +254,19 @@ private class GlowPanel : JPanel() {
             g2.color = Color(255, 255, 255, a)
             val r = if (i % 9 == 0) 3 else 2
             g2.fillOval(x.toInt(), y.toInt(), r, r)
+        }
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        for (k in 0 until 3) {
+            val ph = (t * 0.22 + k * 0.37) % 1.0
+            if (ph > 0.22) continue
+            val p = ph / 0.22
+            val x1 = width * (0.15 + 0.7 * ((k * 0.53) % 1.0)) + p * width * 0.25
+            val y1 = height * 0.05 + p * height * 0.3 + k * 20
+            val x0 = x1 - 90; val y0 = y1 - 40
+            val al = (255 * Math.sin(p * Math.PI)).toInt().coerceIn(0, 255)
+            g2.paint = GradientPaint(x0.toFloat(), y0.toFloat(), Color(255, 255, 255, 0), x1.toFloat(), y1.toFloat(), Color(0xCB, 0xA6, 0xF7, al))
+            g2.stroke = BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
+            g2.drawLine(x0.toInt(), y0.toInt(), x1.toInt(), y1.toInt())
         }
     }
 }
@@ -493,7 +531,7 @@ fun main() {
         }
         val north = JPanel(BorderLayout(4, 6)).dark().apply { add(head, BorderLayout.NORTH); add(box, BorderLayout.SOUTH) }
         val seekRow = JPanel(BorderLayout(6, 0)).dark().apply { add(seek); add(timeLbl, BorderLayout.EAST) }
-        val south = JPanel(GridLayout(0, 1)).dark().apply { add(nowLbl); add(seekRow); add(bar) }
+        val south = JPanel(GridLayout(0, 1)).dark().apply { add(nowLbl); add(WaveStrip()); add(seekRow); add(bar) }
 
         JFrame("Orion Music").apply {
             defaultCloseOperation = JFrame.EXIT_ON_CLOSE
