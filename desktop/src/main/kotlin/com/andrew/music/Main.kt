@@ -244,6 +244,36 @@ private class GlassCard(val inner: JComponent) : JPanel(BorderLayout()) {
     }
 }
 
+private class Vinyl : JComponent() {
+    private var t = 0.0
+    init { isOpaque = false; javax.swing.Timer(40) { if (isShowing) { t += 0.08; repaint() } }.start() }
+    override fun getPreferredSize() = Dimension(46, 46)
+    override fun paintComponent(g: Graphics) {
+        val g2 = g.create() as Graphics2D
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        val d = minOf(width, height) - 6
+        val cx = width / 2.0; val cy = height / 2.0
+        g2.color = Color(ACC.red, ACC.green, ACC.blue, 60)
+        g2.fillOval((cx - d / 2 - 3).toInt(), (cy - d / 2 - 3).toInt(), d + 6, d + 6)
+        g2.color = Color(0x14, 0x14, 0x1E)
+        g2.fillOval((cx - d / 2).toInt(), (cy - d / 2).toInt(), d, d)
+        g2.stroke = BasicStroke(1f)
+        for (r in 1..3) {
+            g2.color = Color(255, 255, 255, 25)
+            val rr = d / 2 - r * 4
+            g2.drawOval((cx - rr).toInt(), (cy - rr).toInt(), rr * 2, rr * 2)
+        }
+        g2.stroke = BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
+        g2.paint = GradientPaint(0f, 0f, ACC, width.toFloat(), height.toFloat(), Color(0xCBA6F7))
+        val rr = d / 2 - 2
+        g2.drawArc((cx - rr).toInt(), (cy - rr).toInt(), rr * 2, rr * 2, Math.toDegrees(-t).toInt(), 70)
+        g2.drawArc((cx - rr).toInt(), (cy - rr).toInt(), rr * 2, rr * 2, Math.toDegrees(-t).toInt() + 180, 70)
+        g2.paint = GradientPaint(0f, 0f, ACC, width.toFloat(), height.toFloat(), Color(0xF5C2E7))
+        g2.fillOval((cx - 7).toInt(), (cy - 7).toInt(), 14, 14)
+        g2.dispose()
+    }
+}
+
 private class GlowPanel : JPanel() {
     private var t = 0.0
     private val rnd = java.util.Random(7)
@@ -551,7 +581,7 @@ fun main() {
             add(JPanel(FlowLayout(FlowLayout.RIGHT, 6, 0)).dark().apply { add(NowBars()); add(updateB); add(status) }, BorderLayout.EAST)
         }
         val north = JPanel(BorderLayout(4, 6)).dark().apply { add(head, BorderLayout.NORTH); add(box, BorderLayout.SOUTH) }
-        val seekRow = JPanel(BorderLayout(6, 0)).dark().apply { add(seek); add(timeLbl, BorderLayout.EAST) }
+        val seekRow = JPanel(BorderLayout(6, 0)).dark().apply { add(Vinyl(), BorderLayout.WEST); add(seek); add(timeLbl, BorderLayout.EAST) }
         val south = JPanel(GridLayout(0, 1)).dark().apply { add(nowLbl); add(WaveStrip()); add(seekRow); add(bar) }
 
         JFrame("Orion Music").apply {
