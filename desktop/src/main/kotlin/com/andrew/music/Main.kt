@@ -8,18 +8,87 @@ import java.awt.event.MouseEvent
 import java.io.File
 import javax.swing.*
 
-private val BG = Color(0x0B0F1A)
-private val PANEL = Color(0x141B2D)
-private val ACC = Color(0x00B8D4)
-private val DIM = Color(0x7C8599)
+private val BG = Color(0x11111B)
+private val PANEL = Color(0x20212C)
+private val ACC = Color(0x89B4FA)
+private val DIM = Color(0x787D92)
 
-private fun <T : JComponent> T.dark(): T { background = PANEL; foreground = Color.WHITE; return this }
+private fun <T : JComponent> T.dark(): T { background = PANEL; foreground = Color.WHITE; if (this is JPanel || this is JLabel) isOpaque = false; return this }
 
-private fun btn(t: String, f: () -> Unit) = JButton(t).apply {
-    background = PANEL; foreground = ACC; isFocusPainted = false
-    border = BorderFactory.createLineBorder(ACC.darker())
-    addActionListener { f() }
+private class FadeTabs : JTabbedPane() {
+    private var a = 1f
+    init {
+        addChangeListener {
+            a = 0f
+            javax.swing.Timer(16, null).apply {
+                addActionListener { a += 0.09f; if (a >= 1f) { a = 1f; stop() }; repaint() }
+                start()
+            }
+        }
+    }
+    override fun paint(g: Graphics) {
+        val g2 = g.create() as Graphics2D
+        g2.composite = AlphaComposite.SrcOver.derive(a.coerceIn(0f, 1f))
+        super.paint(g2)
+        g2.dispose()
+    }
 }
+
+private class GlowPanel : JPanel() {
+    private var t = 0.0
+    init { isOpaque = true; javax.swing.Timer(33) { t += 0.02; repaint() }.start() }
+    override fun paintComponent(g: Graphics) {
+        val g2 = g.create() as Graphics2D
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        g2.color = BG; g2.fillRect(0, 0, width, height)
+        val blobs = arrayOf(Triple(0.2, 0.3, ACC), Triple(0.8, 0.6, Color(0xB4BEFE)), Triple(0.5, 0.9, Color(0xCBA6F7)))
+        for ((i, b) in blobs.withIndex()) {
+            val cx = (width * (b.first + 0.18 * Math.sin(t * (0.7 + i * 0.3) + i * 2))).toFloat()
+            val cy = (height * (b.second + 0.15 * Math.cos(t * (0.5 + i * 0.25) + i))).toFloat()
+            val r = maxOf(width, height) * 0.55f
+            val c = b.third
+            g2.paint = RadialGradientPaint(cx, cy, r, floatArrayOf(0f, 1f), arrayOf(Color(c.red, c.green, c.blue, 50), Color(c.red, c.green, c.blue, 0)))
+            g2.fillRect(0, 0, width, height)
+        }
+        g2.dispose()
+    }
+}
+
+private class PillButton(t: String, val pulse: Boolean = false, f: () -> Unit) : JButton(t) {
+    private var amt = 0f
+    private var target = 0f
+    private var ph = 0.0
+    init {
+        isContentAreaFilled = false; isFocusPainted = false; isBorderPainted = false
+        foreground = BG; font = font.deriveFont(Font.BOLD, 13f)
+        border = BorderFactory.createEmptyBorder(8, 18, 8, 18)
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        addMouseListener(object : MouseAdapter() {
+            override fun mouseEntered(e: MouseEvent) { target = 1f }
+            override fun mouseExited(e: MouseEvent) { target = 0f }
+            override fun mousePressed(e: MouseEvent) { amt = 1.4f }
+        })
+        javax.swing.Timer(16) {
+            amt += (target - amt) * 0.25f; ph += 0.08
+            if (pulse || Math.abs(target - amt) > 0.01f) repaint()
+        }.start()
+        addActionListener { f() }
+    }
+    override fun paintComponent(g: Graphics) {
+        val g2 = g.create() as Graphics2D
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        val glow = (amt * 0.5f + (if (pulse) 0.25f * (1f + Math.sin(ph).toFloat()) / 2f else 0f)).coerceIn(0f, 1f)
+        g2.color = Color(ACC.red, ACC.green, ACC.blue, (110 * glow).toInt().coerceIn(0, 255))
+        g2.fillRoundRect(0, 0, width, height, height, height)
+        fun lift(c: Color) = Color((c.red + (255 - c.red) * glow * 0.4f).toInt(), (c.green + (255 - c.green) * glow * 0.4f).toInt(), (c.blue + (255 - c.blue) * glow * 0.4f).toInt())
+        g2.paint = GradientPaint(0f, 0f, lift(ACC), width.toFloat(), height.toFloat(), lift(Color(0xB4BEFE)))
+        g2.fillRoundRect(1, 1, width - 2, height - 2, height, height)
+        g2.dispose()
+        super.paintComponent(g)
+    }
+}
+
+private fun btn(t: String, f: () -> Unit): JButton = PillButton(t, false, f)
 
 private fun fmt(sec: Int) = "%d:%02d".format(sec / 60, sec % 60)
 
@@ -153,7 +222,7 @@ fun main() {
         for (i in 0 until 10) eq.add(slider(AudioFx.FREQS[i].let { if (it >= 1000) "${it / 1000}k" else "$it" }, -12, 12, 0, true) { fx.bands[i] = it.toDouble() })
         soundTab.add(knobs, BorderLayout.NORTH); soundTab.add(eq, BorderLayout.CENTER)
 
-        val tp = JTabbedPane().dark()
+        val tp = FadeTabs().dark()
         tp.addTab("Search", searchTab); tp.addTab("Queue", queueTab); tp.addTab("Liked", likedTab)
         tp.addTab("Playlists", JPanel(BorderLayout()).dark().apply { add(plCombo, BorderLayout.NORTH); add(plList) })
         tp.addTab("Sound", soundTab)
@@ -181,7 +250,7 @@ fun main() {
         }
         val bar = JPanel(FlowLayout(FlowLayout.CENTER, 6, 4)).dark()
         bar.add(btn("Prev") { lib.previous()?.let { play(it); refreshAll() } })
-        bar.add(btn("Pause/Play") { mpv.togglePause() })
+        bar.add(PillButton("Pause/Play", true) { mpv.togglePause() })
         bar.add(btn("Next") { lib.next()?.let { play(it); refreshAll() } })
         bar.add(shuffleB); bar.add(repeatB)
         bar.add(btn("Like") { (currentSel(tp) ?: lib.current())?.let { lib.toggleLike(it); refreshAll() } })
@@ -223,8 +292,7 @@ fun main() {
         JFrame("Orion Music").apply {
             defaultCloseOperation = JFrame.EXIT_ON_CLOSE
             addWindowListener(object : java.awt.event.WindowAdapter() { override fun windowClosing(e: java.awt.event.WindowEvent) { mpv.stop() } })
-            contentPane.background = PANEL
-            contentPane.layout = BorderLayout(8, 8)
+            contentPane = GlowPanel().apply { layout = BorderLayout(8, 8) }
             (contentPane as JComponent).border = BorderFactory.createEmptyBorder(8, 8, 8, 8)
             contentPane.add(north, BorderLayout.NORTH); contentPane.add(tp, BorderLayout.CENTER); contentPane.add(south, BorderLayout.SOUTH)
             setSize(820, 700); setLocationRelativeTo(null); isVisible = true
