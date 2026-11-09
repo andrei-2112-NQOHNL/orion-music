@@ -223,6 +223,27 @@ private class WaveStrip : JComponent() {
     }
 }
 
+private class GlassCard(val inner: JComponent) : JPanel(BorderLayout()) {
+    private var t = 0f
+    init {
+        isOpaque = false
+        border = BorderFactory.createEmptyBorder(6, 6, 6, 6)
+        add(inner)
+        javax.swing.Timer(50) { if (isShowing) { t += 0.04f; repaint() } }.start()
+    }
+    override fun paintComponent(g: Graphics) {
+        val g2 = g.create() as Graphics2D
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        val k = 0.5f + 0.5f * Math.sin(t.toDouble()).toFloat()
+        g2.color = Color(255, 255, 255, 14)
+        g2.fillRoundRect(0, 0, width - 1, height - 1, 26, 26)
+        g2.paint = GradientPaint(0f, 0f, Color(ACC.red, ACC.green, ACC.blue, (50 + 110 * k).toInt()), width.toFloat(), height.toFloat(), Color(0xCB, 0xA6, 0xF7, (160 - 110 * k).toInt()))
+        g2.stroke = BasicStroke(1.6f)
+        g2.drawRoundRect(0, 0, width - 1, height - 1, 26, 26)
+        g2.dispose()
+    }
+}
+
 private class GlowPanel : JPanel() {
     private var t = 0.0
     private val rnd = java.util.Random(7)
@@ -538,7 +559,7 @@ fun main() {
             addWindowListener(object : java.awt.event.WindowAdapter() { override fun windowClosing(e: java.awt.event.WindowEvent) { mpv.stop() } })
             contentPane = GlowPanel().apply { layout = BorderLayout(8, 8) }
             (contentPane as JComponent).border = BorderFactory.createEmptyBorder(8, 8, 8, 8)
-            contentPane.add(north, BorderLayout.NORTH); contentPane.add(tp, BorderLayout.CENTER); contentPane.add(south, BorderLayout.SOUTH)
+            contentPane.add(north, BorderLayout.NORTH); contentPane.add(GlassCard(tp), BorderLayout.CENTER); contentPane.add(south, BorderLayout.SOUTH)
             setSize(820, 700); setLocationRelativeTo(null); isVisible = true
         }
     }
