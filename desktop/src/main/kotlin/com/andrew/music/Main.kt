@@ -305,6 +305,22 @@ private class Vinyl : JComponent() {
     }
 }
 
+@Volatile private var coverSmall: java.awt.image.BufferedImage? = null
+@Volatile private var coverAt = 0L
+
+private fun loadCover(u: String) {
+    val big = javax.imageio.ImageIO.read(java.net.URL(u)) ?: return
+    fun shrink(src: java.awt.image.BufferedImage, w: Int, h: Int): java.awt.image.BufferedImage {
+        val d = java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_RGB)
+        val q = d.createGraphics()
+        q.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+        q.drawImage(src, 0, 0, w, h, null); q.dispose(); return d
+    }
+    val mid = shrink(big, 96, 56)
+    coverSmall = shrink(mid, 24, 14)
+    coverAt = System.currentTimeMillis()
+}
+
 private class GlowPanel : JPanel() {
     private var t = 0.0
     private var mx = 400.0
@@ -341,6 +357,17 @@ private class GlowPanel : JPanel() {
         val g2 = g as Graphics2D
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
         g2.drawImage(lo, 0, 0, width, height, null)
+        val cv = coverSmall
+        if (cv != null) {
+            val k = ((System.currentTimeMillis() - coverAt) / 900f).coerceIn(0f, 1f)
+            g2.composite = AlphaComposite.SrcOver.derive(k)
+            val sc = maxOf(width.toFloat() / cv.width, height.toFloat() / cv.height)
+            val dw = (cv.width * sc).toInt(); val dh = (cv.height * sc).toInt()
+            g2.drawImage(cv, (width - dw) / 2, (height - dh) / 2, dw, dh, null)
+            g2.color = Color(BG.red, BG.green, BG.blue, 150)
+            g2.fillRect(0, 0, width, height)
+            g2.composite = AlphaComposite.SrcOver
+        }
         val pi = MouseInfo.getPointerInfo()
         if (pi != null) {
             val pt = Point(pi.location); SwingUtilities.convertPointFromScreen(pt, this)
@@ -379,8 +406,8 @@ private class PillButton(t: String, val pulse: Boolean = false, f: () -> Unit) :
     private val tm = javax.swing.Timer(25, null)
     init {
         isContentAreaFilled = false; isFocusPainted = false; isBorderPainted = false
-        foreground = BG; font = font.deriveFont(Font.BOLD, 13f)
-        border = BorderFactory.createEmptyBorder(8, 18, 8, 18)
+        foreground = BG; font = font.deriveFont(Font.BOLD, 12f)
+        border = BorderFactory.createEmptyBorder(5, 12, 5, 12)
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         tm.addActionListener {
             if (!isShowing) return@addActionListener
@@ -521,6 +548,7 @@ fun main() {
                         .onFailure { status.text = "Install mpv to play audio" }
                 }
             }.start()
+            t.thumbnail?.let { u -> Thread { runCatching { loadCover(u) } }.start() }
             Thread { lyrics = runCatching { Lyrics.fetch(t) }.getOrDefault(emptyList()) }.start()
         }
 
@@ -601,7 +629,7 @@ fun main() {
         }
         val bar = JPanel(FlowLayout(FlowLayout.CENTER, 6, 4)).dark()
         bar.add(btn("Prev") { lib.previous()?.let { play(it); refreshAll() } })
-        bar.add(PillButton("Play / Pause", true) { mpv.togglePause() }.apply { font = font.deriveFont(Font.BOLD, 16f); border = BorderFactory.createEmptyBorder(14, 38, 14, 38) })
+        bar.add(PillButton("Play / Pause", true) { mpv.togglePause() }.apply { font = font.deriveFont(Font.BOLD, 14f); border = BorderFactory.createEmptyBorder(8, 24, 8, 24) })
         bar.add(btn("Next") { lib.next()?.let { play(it); refreshAll() } })
         bar.add(shuffleB); bar.add(repeatB)
         val likeBurst = Burst()
